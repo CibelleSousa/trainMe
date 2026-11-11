@@ -20,6 +20,10 @@ dev = [
     "httpx",
 ]
 
+[tool.pytest.ini_options]
+markers = ["integration: chama um LLM real, pula por padrão"]
+addopts = "-m 'not integration'"
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
