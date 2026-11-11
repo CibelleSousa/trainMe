@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from app.exercises import load_exercises
+from app.exercises import compute_weight, load_exercises, normalize_exercise
 from app.llm.base import LLMClient
 from app.schemas import ExtractionResult
 
@@ -78,3 +78,58 @@ def extract(client: LLMClient, text: str) -> ExtractionResult:
             if tentativa == 1:
                 raise
     raise RuntimeError("inalcançável")
+
+
+def normalizar_resultado(resultado: ExtractionResult) -> dict:
+    entradas_normalizadas = []
+    needs_confirmation = resultado.needs_confirmation
+    for entrada in resultado.entries:
+        slug = normalize_exercise(entrada.exercise_raw)
+        if slug is None:
+            needs_confirmation = True
+        series = [
+            {
+                "weight_kg": compute_weight(slug, s.weight_kg) if slug and s.weight_kg is not None else s.weight_kg,
+                "reps": s.reps,
+                "flag": s.flag,
+            }
+            for s in entrada.sets
+        ]
+        entradas_normalizadas.append(
+            {"exercise_raw": entrada.exercise_raw, "exercise_slug": slug, "sets": series}
+        )
+    return {"entries": entradas_normalizadas, "needs_confirmation": needs_confirmation}
+
+
+def _criar_client(provider: str) -> LLMClient:
+    if provider == "ollama":
+        from app.llm.ollama_client import OllamaClient
+
+        return OllamaClient()
+    if provider == "gemini":
+        from app.llm.gemini_client import GeminiClient
+
+        return GeminiClient()
+    raise ValueError(f"provider desconhecido: {provider}")
+
+
+def _main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Extrai dados de treino de um texto livre")
+    parser.add_argument("text")
+    parser.add_argument("--provider", choices=["ollama", "gemini"], default="ollama")
+    args = parser.parse_args()
+
+    client = _criar_client(args.provider)
+    resultado = extract(client, args.text)
+
+    print("JSON extraído:")
+    print(resultado.model_dump_json(indent=2))
+
+    print("\nNormalizado:")
+    print(json.dumps(normalizar_resultado(resultado), indent=2, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    _main()
