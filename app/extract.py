@@ -52,7 +52,8 @@ def _fewshot_para_prompt() -> str:
     return "\n\n".join(blocos)
 
 
-def montar_prompt(text: str) -> str:
+def montar_prompt(text: str, few_shot: bool = True) -> str:
+    bloco_exemplos = f"\nExemplos:\n{_fewshot_para_prompt()}\n" if few_shot else ""
     return f"""\
 Você extrai dados estruturados de relatos em português sobre treino de musculação.
 Devolva só o JSON no formato pedido, sem comentário.
@@ -61,17 +62,14 @@ Exercícios canônicos conhecidos:
 {_lista_exercicios_para_prompt()}
 
 {REGRAS}
-
-Exemplos:
-{_fewshot_para_prompt()}
-
+{bloco_exemplos}
 Texto: {text}
 JSON:"""
 
 
-def extract(client: LLMClient, text: str) -> ExtractionResult:
+def extract(client: LLMClient, text: str, few_shot: bool = True) -> ExtractionResult:
     schema = ExtractionResult.model_json_schema()
-    prompt = montar_prompt(text)
+    prompt = montar_prompt(text, few_shot=few_shot)
 
     for tentativa in range(2):
         bruto = client.extract(prompt, schema)
@@ -104,15 +102,15 @@ def normalizar_resultado(resultado: ExtractionResult) -> dict:
     return {"entries": entradas_normalizadas, "needs_confirmation": needs_confirmation}
 
 
-def _criar_client(provider: str) -> LLMClient:
+def criar_client(provider: str, model: str | None = None) -> LLMClient:
     if provider == "ollama":
         from app.llm.ollama_client import OllamaClient
 
-        return OllamaClient()
+        return OllamaClient(**({"model": model} if model else {}))
     if provider == "gemini":
         from app.llm.gemini_client import GeminiClient
 
-        return GeminiClient()
+        return GeminiClient(**({"model": model} if model else {}))
     raise ValueError(f"provider desconhecido: {provider}")
 
 
@@ -124,7 +122,7 @@ def _main() -> None:
     parser.add_argument("--provider", choices=["ollama", "gemini"], default="ollama")
     args = parser.parse_args()
 
-    client = _criar_client(args.provider)
+    client = criar_client(args.provider)
     resultado = extract(client, args.text)
 
     print("JSON extraído:")

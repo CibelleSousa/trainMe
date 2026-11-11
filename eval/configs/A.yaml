@@ -1,0 +1,4 @@
+name: A
+provider: ollama
+model: qwen3:8b
+few_shot: false
