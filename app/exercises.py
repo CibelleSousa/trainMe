@@ -33,8 +33,8 @@ def normalize_exercise(raw: str) -> str | None:
     chave = _normalizar_texto(raw)
     if chave in mapa:
         return mapa[chave]
-    proximos = get_close_matches(chave, mapa.keys(), n=1, cutoff=0.85)
-    if proximos:
+    proximos = get_close_matches(chave, mapa.keys(), n=2, cutoff=0.9)
+    if len(proximos) == 1:
         return mapa[proximos[0]]
     return None
 

@@ -14,6 +14,25 @@ def test_normalize_exercise_desconhecido_retorna_none():
     assert normalize_exercise("exercicio que nao existe em lugar nenhum") is None
 
 
+def test_abdutora_nunca_vira_adutora():
+    assert normalize_exercise("abdutora") == "cadeira_abdutora"
+    assert normalize_exercise("abdutoraa") == "cadeira_abdutora"
+
+
+def test_adutora_nunca_vira_abdutora():
+    assert normalize_exercise("adutora") == "cadeira_adutora"
+
+
+def test_extensora_nao_confunde_com_mesa_flexora():
+    assert normalize_exercise("extensora") == "cadeira_extensora"
+    assert normalize_exercise("extensoraa") == "cadeira_extensora"
+    assert normalize_exercise("flexora") == "mesa_flexora"
+
+
+def test_fuzzy_ambiguo_retorna_none():
+    assert normalize_exercise("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx") is None
+
+
 def test_compute_weight_anilhas_por_lado():
     assert compute_weight("supino_reto_barra", 7.5) == 35.0
 
