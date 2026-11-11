@@ -1,4 +1,4 @@
-from app.exercises import compute_weight, normalize_exercise
+from app.exercises import compute_weight, load_exercises, normalize_exercise
 
 
 def test_normalize_exercise_por_alias():
@@ -61,6 +61,40 @@ def test_abreviacao_uni_expande_para_unilateral():
 def test_abreviacao_nao_reabre_confusao_adutora_abdutora():
     assert normalize_exercise("cadeira abdutora") == "cadeira_abdutora"
     assert normalize_exercise("cadeira adutora") == "cadeira_adutora"
+
+
+def test_ignora_preposicoes():
+    assert normalize_exercise("pull down da polia") == "pull_down_polia"
+    assert normalize_exercise("elevacao lateral na polia") == "elevacao_lateral_polia"
+    assert normalize_exercise("puxada alta da polia") == "puxada_alta_polia"
+
+
+def test_preposicao_nao_reabre_confusao_adutora_abdutora():
+    assert normalize_exercise("cadeira da abdutora") == "cadeira_abdutora"
+    assert normalize_exercise("cadeira da adutora") == "cadeira_adutora"
+
+
+def test_singular_plural_halter_halteres():
+    assert normalize_exercise("inclinado halteres") == "supino_inclinado_halteres"
+    assert normalize_exercise("elevacao lateral com halter") == "elevacao_lateral_halteres"
+
+
+def test_singular_plural_geral_nao_confunde_exercicios_diferentes():
+    assert normalize_exercise("abdutora") == "cadeira_abdutora"
+    assert normalize_exercise("adutora") == "cadeira_adutora"
+    assert normalize_exercise("extensora") == "cadeira_extensora"
+    assert normalize_exercise("flexora") == "mesa_flexora"
+
+
+def test_todo_alias_e_nome_resolve_para_o_proprio_slug():
+    # "pulldown" está em pull_down_polia E puxada_alta_polia no exercises.json:
+    # ambiguidade do dado em si, não da normalização. Ignorado aqui de propósito.
+    aliases_duplicados = {"pulldown"}
+    for ex in load_exercises():
+        for texto in [ex["nome"], *ex.get("aliases", [])]:
+            if texto.strip().lower() in aliases_duplicados:
+                continue
+            assert normalize_exercise(texto) == ex["slug"], f"{texto!r} não resolveu para {ex['slug']}"
 
 
 def test_compute_weight_anilhas_por_lado():

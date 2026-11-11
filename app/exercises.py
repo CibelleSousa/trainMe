@@ -17,14 +17,27 @@ ABREVIACOES = {
     "uni": "unilateral",
 }
 
+PREPOSICOES = {"com", "de", "da", "na", "no"}
+
 
 def _normalizar_texto(texto: str) -> str:
     sem_acento = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
     return " ".join(sem_acento.lower().replace(".", "").split())
 
 
-def _expandir_abreviacoes(texto_normalizado: str) -> str:
-    tokens = [ABREVIACOES.get(t, t) for t in texto_normalizado.split(" ")]
+def _singularizar(token: str) -> str:
+    if len(token) > 4 and token.endswith("es"):
+        return token[:-2]
+    if len(token) > 3 and token.endswith("s"):
+        return token[:-1]
+    return token
+
+
+def _chave_canonica(texto: str) -> str:
+    tokens = _normalizar_texto(texto).split(" ")
+    tokens = [t for t in tokens if t not in PREPOSICOES]
+    tokens = [ABREVIACOES.get(t, t) for t in tokens]
+    tokens = [_singularizar(t) for t in tokens]
     return " ".join(tokens)
 
 
@@ -40,21 +53,17 @@ def _mapa_normalizado() -> dict[str, str]:
     for ex in load_exercises():
         chaves = [ex["slug"].replace("_", " "), ex["nome"], *ex.get("aliases", [])]
         for chave in chaves:
-            mapa[_normalizar_texto(chave)] = ex["slug"]
+            mapa[_chave_canonica(chave)] = ex["slug"]
     return mapa
 
 
 def normalize_exercise(raw: str) -> str | None:
     mapa = _mapa_normalizado()
-    chave = _normalizar_texto(raw)
+    chave = _chave_canonica(raw)
     if chave in mapa:
         return mapa[chave]
 
-    chave_expandida = _expandir_abreviacoes(chave)
-    if chave_expandida in mapa:
-        return mapa[chave_expandida]
-
-    proximos = get_close_matches(chave_expandida, mapa.keys(), n=2, cutoff=0.9)
+    proximos = get_close_matches(chave, mapa.keys(), n=2, cutoff=0.9)
     if len(proximos) == 1:
         return mapa[proximos[0]]
     return None
