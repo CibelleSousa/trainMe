@@ -7,11 +7,18 @@ from google.genai import types
 from google.genai.errors import ClientError
 
 
+def _variavel_obrigatoria(nome: str) -> str:
+    valor = os.environ.get(nome)
+    if not valor:
+        raise RuntimeError(f"Variável {nome} ausente. Defina {nome} no arquivo .env.")
+    return valor
+
+
 class GeminiClient:
     def __init__(self, model: str | None = None, api_key: str | None = None, max_retries: int = 3):
-        self.model = model or os.environ["GEMINI_MODEL"]
+        self.model = model or _variavel_obrigatoria("GEMINI_MODEL")
         self.max_retries = max_retries
-        self._client = genai.Client(api_key=api_key or os.environ["GEMINI_API_KEY"])
+        self._client = genai.Client(api_key=api_key or _variavel_obrigatoria("GEMINI_API_KEY"))
 
     def extract(self, text: str, schema: dict) -> dict:
         espera = 1.0

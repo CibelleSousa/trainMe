@@ -1,11 +1,14 @@
 import json
 from pathlib import Path
 
+from dotenv import load_dotenv
 from pydantic import ValidationError
 
 from app.exercises import compute_weight, load_exercises, normalize_exercise
 from app.llm.base import LLMClient
 from app.schemas import ExtractionResult
+
+load_dotenv()
 
 FEWSHOT_PATH = Path(__file__).resolve().parent.parent / "eval" / "data" / "fewshot.jsonl"
 

@@ -1,9 +1,6 @@
 import os
 
 import pytest
-from dotenv import load_dotenv
-
-load_dotenv()
 
 from app.extract import extract
 from app.llm.gemini_client import GeminiClient
