@@ -34,7 +34,7 @@ LLMs: Ollama local (`qwen3:8b`, GPU de 8 GB) e API do Gemini (`google-genai`). C
 
 ## Status (atualize ao fim de cada etapa)
 - [x] Etapa 0: estrutura, schemas, banco
-- [ ] Etapa 1: exercises.py e progression.py com testes
+- [x] Etapa 1: exercises.py e progression.py com testes
 - [ ] Etapa 2: clientes LLM e extract.py
 - [ ] Etapa 3: dataset, validador, harness e relatório
 - [ ] Etapa 4 (P1): agente com ferramentas e API

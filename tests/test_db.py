@@ -17,6 +17,21 @@ def test_cria_tabelas():
     assert SQLModel.metadata.tables.keys() >= {"session", "exerciselog", "setlog"}
 
 
+def test_session_com_personal_default_false():
+    sessao = Session(date=date(2026, 11, 11), raw_text="supino 4x8 com 80")
+    assert sessao.com_personal is False
+
+
+def test_session_com_personal_true_persiste():
+    engine = make_engine()
+    with DbSession(engine) as db:
+        sessao = Session(date=date(2026, 11, 11), raw_text="treino com personal", com_personal=True)
+        db.add(sessao)
+        db.commit()
+        db.refresh(sessao)
+        assert sessao.com_personal is True
+
+
 def test_grava_sessao_exercicio_e_series():
     engine = make_engine()
     with DbSession(engine) as db:
