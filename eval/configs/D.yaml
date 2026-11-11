@@ -1,0 +1,4 @@
+name: D
+provider: ollama
+model: qwen3:8b
+few_shot: true

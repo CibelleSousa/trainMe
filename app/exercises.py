@@ -7,9 +7,25 @@ from pathlib import Path
 DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "exercises.json"
 
 
+ABREVIACOES = {
+    "maq": "maquina",
+    "elev": "elevacao",
+    "crucif": "crucifixo",
+    "desenv": "desenvolvimento",
+    "incl": "inclinado",
+    "halter": "halteres",
+    "uni": "unilateral",
+}
+
+
 def _normalizar_texto(texto: str) -> str:
     sem_acento = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
     return " ".join(sem_acento.lower().replace(".", "").split())
+
+
+def _expandir_abreviacoes(texto_normalizado: str) -> str:
+    tokens = [ABREVIACOES.get(t, t) for t in texto_normalizado.split(" ")]
+    return " ".join(tokens)
 
 
 @lru_cache(maxsize=1)
@@ -33,7 +49,12 @@ def normalize_exercise(raw: str) -> str | None:
     chave = _normalizar_texto(raw)
     if chave in mapa:
         return mapa[chave]
-    proximos = get_close_matches(chave, mapa.keys(), n=2, cutoff=0.9)
+
+    chave_expandida = _expandir_abreviacoes(chave)
+    if chave_expandida in mapa:
+        return mapa[chave_expandida]
+
+    proximos = get_close_matches(chave_expandida, mapa.keys(), n=2, cutoff=0.9)
     if len(proximos) == 1:
         return mapa[proximos[0]]
     return None

@@ -112,7 +112,7 @@ def comparar_exemplo(expected: dict, output: dict | None) -> dict:
 
 
 def _taxa(num: int, den: int) -> str:
-    return f"{num / den:.0%}" if den else "n/d"
+    return f"{num}/{den} ({num / den:.0%})" if den else "n/d"
 
 
 def avaliar_config(nome_config: str, dataset: list[dict]) -> list[dict]:
@@ -174,9 +174,17 @@ def gerar_relatorio(nomes_config: list[str]) -> str:
     linhas = []
     for nome, avals in todas_avaliacoes.items():
         agregado = _agregar(avals)
-        if agregado:
-            linhas.append({"config": nome, **agregado})
-    partes.append(tabela_markdown(linhas, ["config", "n", "json_valido", "exercicio", "serie", "exato", "latencia_mediana_s"]))
+        if not agregado:
+            continue
+        sem_ambiguo = [a for a in avals if "ambiguo" not in a["tags"]]
+        agregado["exato_sem_ambiguo"] = _taxa(sum(a["exact"] for a in sem_ambiguo), len(sem_ambiguo))
+        linhas.append({"config": nome, **agregado})
+    partes.append(
+        tabela_markdown(
+            linhas,
+            ["config", "n", "json_valido", "exercicio", "serie", "exato", "exato_sem_ambiguo", "latencia_mediana_s"],
+        )
+    )
 
     partes.append("\n## Resultado por fonte (source)\n")
     for nome, avals in todas_avaliacoes.items():
@@ -196,12 +204,30 @@ def gerar_relatorio(nomes_config: list[str]) -> str:
         if not avals:
             continue
         partes.append(f"\n**{nome}**\n")
-        tags = sorted({t for a in avals for t in a["tags"]})
+        contagem_tag = {}
+        for a in avals:
+            for t in a["tags"]:
+                contagem_tag[t] = contagem_tag.get(t, 0) + 1
+        tags_grandes = sorted(t for t, n in contagem_tag.items() if n >= 5)
+        tags_pequenas = {t for t, n in contagem_tag.items() if n < 5}
+
         linhas = []
-        for tag in tags:
+        for tag in tags_grandes:
             agregado = _agregar([a for a in avals if tag in a["tags"]])
             if agregado:
                 linhas.append({"tag": tag, **agregado})
+
+        if tags_pequenas:
+            vistos = set()
+            avals_outras = []
+            for a in avals:
+                if a["id"] not in vistos and tags_pequenas & set(a["tags"]):
+                    vistos.add(a["id"])
+                    avals_outras.append(a)
+            agregado = _agregar(avals_outras)
+            if agregado:
+                linhas.append({"tag": "outras (n pequeno)", **agregado})
+
         partes.append(tabela_markdown(linhas, ["tag", "n", "json_valido", "exercicio", "serie", "exato", "latencia_mediana_s"]))
 
     partes.append("\n## Erros reais (esperado vs obtido)\n")
@@ -214,6 +240,21 @@ def gerar_relatorio(nomes_config: list[str]) -> str:
         partes.append(f"\n**{nome}** ({len(erros_destacados)} erro(s) de exercício/carga)\n")
         for a, erro in erros_destacados[:10]:
             partes.append(f"- `{a['id']}` ({a['source']}): {erro}\n  texto: \"{a['text'][:90]}...\"")
+
+    partes.append("\n## Exercício ainda não normaliza (slug None)\n")
+    for nome, avals in todas_avaliacoes.items():
+        nao_normalizados: dict[str, set[str]] = {}
+        for a in avals:
+            if not a["output"]:
+                continue
+            for e in a["output"].get("entries", []):
+                if normalize_exercise(e["exercise_raw"]) is None:
+                    nao_normalizados.setdefault(e["exercise_raw"], set()).add(a["id"])
+        if not nao_normalizados:
+            continue
+        partes.append(f"\n**{nome}**\n")
+        for raw, ids in sorted(nao_normalizados.items()):
+            partes.append(f"- {raw!r} (exemplos: {', '.join(sorted(ids))})")
 
     return "\n".join(partes)
 

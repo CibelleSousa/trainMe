@@ -1,3 +1,4 @@
+import eval.report as report_mod
 from eval.report import comparar_exemplo, normalizar_saida
 
 
@@ -46,3 +47,40 @@ def test_comparar_exemplo_output_none_conta_como_invalido():
     r = comparar_exemplo(expected_simples(), None)
     assert r["json_valido"] is False
     assert r["exact"] is False
+
+
+def test_relatorio_mostra_exato_com_e_sem_ambiguo(monkeypatch):
+    avals = [
+        {"id": "a", "source": "real", "tags": ["ambiguo"], "latency_s": 1.0, "exact": False, "ex_ok": 0, "ex_total": 1, "serie_ok": 0, "serie_total": 1, "json_valido": True, "erros": [], "output": None},
+        {"id": "b", "source": "real", "tags": [], "latency_s": 1.0, "exact": True, "ex_ok": 1, "ex_total": 1, "serie_ok": 1, "serie_total": 1, "json_valido": True, "erros": [], "output": None},
+    ]
+    monkeypatch.setattr(report_mod, "avaliar_config", lambda nome, dataset: avals)
+    monkeypatch.setattr(report_mod, "_ler_jsonl", lambda caminho: [])
+
+    relatorio = report_mod.gerar_relatorio(["X"])
+    assert "exato_sem_ambiguo" in relatorio
+    assert "1/2 (50%)" in relatorio
+    assert "2/2 (100%)" in relatorio
+
+
+def test_tags_com_n_pequeno_agrupam_em_outras(monkeypatch):
+    def aval(id_, tags):
+        return {
+            "id": id_, "source": "real", "tags": tags, "latency_s": 1.0, "exact": True,
+            "ex_ok": 1, "ex_total": 1, "serie_ok": 1, "serie_total": 1, "json_valido": True,
+            "erros": [], "output": None,
+        }
+
+    avals = (
+        [aval(f"grande{i}", ["tag_grande"]) for i in range(5)]
+        + [aval("p1", ["tag_rara_a"])]
+        + [aval("p2", ["tag_rara_b"])]
+    )
+    monkeypatch.setattr(report_mod, "avaliar_config", lambda nome, dataset: avals)
+    monkeypatch.setattr(report_mod, "_ler_jsonl", lambda caminho: [])
+
+    relatorio = report_mod.gerar_relatorio(["X"])
+    assert "tag_grande" in relatorio
+    assert "outras (n pequeno)" in relatorio
+    assert "tag_rara_a" not in relatorio
+    assert "tag_rara_b" not in relatorio
