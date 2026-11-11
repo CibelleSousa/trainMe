@@ -1,0 +1,28 @@
+[project]
+name = "trainme"
+version = "0.1.0"
+description = "Extração estruturada de treinos de musculação em PT-BR, com progressão por regra determinística e avaliação de LLMs."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "sqlmodel",
+    "pydantic>=2",
+    "ollama",
+    "google-genai",
+    "python-dotenv",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*", "eval*"]

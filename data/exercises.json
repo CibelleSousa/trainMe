@@ -1,0 +1,297 @@
+[
+  {
+    "slug": "supino_reto_barra",
+    "nome": "Supino Reto com Barra",
+    "grupo": "peito",
+    "aliases": [
+      "supino reto",
+      "supino reto barra",
+      "supino com barra",
+      "supino"
+    ],
+    "barra_kg": 20,
+    "carga_modo": "anilhas_por_lado"
+  },
+  {
+    "slug": "supino_inclinado_halteres",
+    "nome": "Supino Inclinado com Halteres",
+    "grupo": "peito",
+    "aliases": [
+      "supino inclinado",
+      "inclinado halter",
+      "supino incl com halteres",
+      "inclinado com halteres"
+    ]
+  },
+  {
+    "slug": "crucifixo_maquina",
+    "nome": "Crucifixo Maquina",
+    "grupo": "peito",
+    "aliases": [
+      "crucifixo",
+      "crucifixo maq",
+      "peck deck",
+      "voador"
+    ]
+  },
+  {
+    "slug": "triceps_maquina",
+    "nome": "Maquina de Triceps",
+    "grupo": "triceps",
+    "aliases": [
+      "maq triceps",
+      "maquina triceps",
+      "triceps maquina",
+      "maq de triceps"
+    ]
+  },
+  {
+    "slug": "triceps_unilateral_polia",
+    "nome": "Triceps Unilateral Polia",
+    "grupo": "triceps",
+    "aliases": [
+      "triceps unilateral",
+      "uni polia",
+      "triceps uni polia",
+      "uni na polia"
+    ]
+  },
+  {
+    "slug": "triceps_frances_polia",
+    "nome": "Triceps Frances Polia",
+    "grupo": "triceps",
+    "aliases": [
+      "triceps frances",
+      "frances na polia",
+      "frances polia",
+      "frances"
+    ]
+  },
+  {
+    "slug": "elevacao_lateral_halteres",
+    "nome": "Elevacao Lateral Halteres",
+    "grupo": "ombro",
+    "aliases": [
+      "elevacao lateral",
+      "elev lateral",
+      "lateral com halteres"
+    ]
+  },
+  {
+    "slug": "desenvolvimento_maquina",
+    "nome": "Desenvolvimento Maquina",
+    "grupo": "ombro",
+    "aliases": [
+      "desenvolvimento",
+      "desenv maquina",
+      "desenv maq",
+      "ombro maquina"
+    ]
+  },
+  {
+    "slug": "puxada_alta_polia",
+    "nome": "Puxada Alta na Polia",
+    "grupo": "costas",
+    "aliases": [
+      "puxada alta",
+      "puxada",
+      "puxada na polia",
+      "pulldown"
+    ]
+  },
+  {
+    "slug": "remada_serrote",
+    "nome": "Remada Serrote Unilateral",
+    "grupo": "costas",
+    "aliases": [
+      "serrote",
+      "remada serrote",
+      "serrote unilateral",
+      "remada unilateral"
+    ]
+  },
+  {
+    "slug": "crucifixo_inverso_maquina",
+    "nome": "Crucifixo Inverso Maquina",
+    "grupo": "costas/ombro",
+    "aliases": [
+      "crucifixo inverso",
+      "crucif inverso",
+      "inverso maq"
+    ]
+  },
+  {
+    "slug": "face_pull",
+    "nome": "Face Pull",
+    "grupo": "costas/ombro",
+    "aliases": [
+      "facepull",
+      "face pull na polia"
+    ]
+  },
+  {
+    "slug": "flexao_punho",
+    "nome": "Flexao de Punho",
+    "grupo": "antebraco",
+    "aliases": [
+      "flexao punho",
+      "rosca de punho"
+    ]
+  },
+  {
+    "slug": "rosca_inversa",
+    "nome": "Rosca Inversa",
+    "grupo": "antebraco",
+    "aliases": [
+      "rosca inversa normal"
+    ]
+  },
+  {
+    "slug": "rosca_martelo",
+    "nome": "Rosca Martelo",
+    "grupo": "biceps",
+    "aliases": [
+      "martelo"
+    ]
+  },
+  {
+    "slug": "biceps_maquina_alternado",
+    "nome": "Biceps Maquina Alternado",
+    "grupo": "biceps",
+    "aliases": [
+      "biceps maq alternado",
+      "bicep maquina",
+      "biceps maquina"
+    ]
+  },
+  {
+    "slug": "lombar_maquina",
+    "nome": "Maquina Lombar",
+    "grupo": "lombar",
+    "aliases": [
+      "maq lombar",
+      "lombar na maquina",
+      "lombar"
+    ]
+  },
+  {
+    "slug": "leg_press_inclinado",
+    "nome": "Leg Press Inclinado",
+    "grupo": "quadriceps/gluteo",
+    "aliases": [
+      "leg press",
+      "leg press incl",
+      "leg"
+    ]
+  },
+  {
+    "slug": "panturrilha_leg_press",
+    "nome": "Panturrilha no Leg Press",
+    "grupo": "panturrilha",
+    "aliases": [
+      "panturrilha",
+      "panturrilha leg press"
+    ]
+  },
+  {
+    "slug": "stiff_barra",
+    "nome": "Stiff com Barra",
+    "grupo": "posterior",
+    "aliases": [
+      "stiff",
+      "stiff barra"
+    ]
+  },
+  {
+    "slug": "cadeira_adutora",
+    "nome": "Cadeira Adutora",
+    "grupo": "adutores",
+    "aliases": [
+      "adutora",
+      "cad. adutora"
+    ]
+  },
+  {
+    "slug": "mesa_flexora",
+    "nome": "Mesa Flexora",
+    "grupo": "posterior",
+    "aliases": [
+      "flexora",
+      "mesa flex"
+    ]
+  },
+  {
+    "slug": "cadeira_abdutora",
+    "nome": "Cadeira Abdutora",
+    "grupo": "abdutores",
+    "aliases": [
+      "abdutora",
+      "cad. abdutora"
+    ]
+  },
+  {
+    "slug": "cadeira_extensora",
+    "nome": "Cadeira Extensora",
+    "grupo": "quadriceps",
+    "aliases": [
+      "extensora"
+    ]
+  },
+  {
+    "slug": "cadeira_abdominal",
+    "nome": "Cadeira Abdominal",
+    "grupo": "abdomen",
+    "aliases": [
+      "abdominal cadeira",
+      "cadeira abd",
+      "abdominal",
+      "maq abdominal"
+    ]
+  },
+  {
+    "slug": "supino_inclinado_maquina",
+    "nome": "Supino Inclinado Maquina",
+    "grupo": "peito",
+    "aliases": [
+      "supino inclinado maquina",
+      "inclinado maquina"
+    ]
+  },
+  {
+    "slug": "elevacao_lateral_polia",
+    "nome": "Elevacao Lateral na Polia",
+    "grupo": "ombro",
+    "aliases": [
+      "elevacao lateral na polia",
+      "lateral na polia"
+    ]
+  },
+  {
+    "slug": "triceps_corda",
+    "nome": "Triceps Corda",
+    "grupo": "triceps",
+    "aliases": [
+      "triceps na corda",
+      "corda"
+    ]
+  },
+  {
+    "slug": "pull_down_polia",
+    "nome": "Pull Down na Polia",
+    "grupo": "costas",
+    "aliases": [
+      "pull down",
+      "pulldown",
+      "pull down na polia"
+    ]
+  },
+  {
+    "slug": "biceps_polia",
+    "nome": "Biceps na Polia",
+    "grupo": "biceps",
+    "aliases": [
+      "biceps na polia",
+      "rosca na polia"
+    ]
+  }
+]
