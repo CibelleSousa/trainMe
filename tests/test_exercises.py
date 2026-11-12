@@ -87,13 +87,8 @@ def test_singular_plural_geral_nao_confunde_exercicios_diferentes():
 
 
 def test_todo_alias_e_nome_resolve_para_o_proprio_slug():
-    # "pulldown" está em pull_down_polia E puxada_alta_polia no exercises.json:
-    # ambiguidade do dado em si, não da normalização. Ignorado aqui de propósito.
-    aliases_duplicados = {"pulldown"}
     for ex in load_exercises():
         for texto in [ex["nome"], *ex.get("aliases", [])]:
-            if texto.strip().lower() in aliases_duplicados:
-                continue
             assert normalize_exercise(texto) == ex["slug"], f"{texto!r} não resolveu para {ex['slug']}"
 
 
@@ -107,3 +102,15 @@ def test_compute_weight_so_a_barra():
 
 def test_compute_weight_passthrough_sem_modo_especial():
     assert compute_weight("triceps_corda", 25) == 25.0
+
+
+def test_compute_weight_por_lado_se_dito_dobra_quando_por_lado():
+    assert compute_weight("supino_inclinado_maquina", 7.5, por_lado=True) == 15.0
+
+
+def test_compute_weight_por_lado_se_dito_nao_dobra_sem_por_lado():
+    assert compute_weight("supino_inclinado_maquina", 7.5, por_lado=False) == 7.5
+
+
+def test_compute_weight_anilhas_por_lado_dobra_mesmo_sem_por_lado_explicito():
+    assert compute_weight("supino_reto_barra", 7.5, por_lado=False) == 35.0

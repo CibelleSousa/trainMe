@@ -80,3 +80,23 @@ def test_rodar_config_registra_erro_sem_derrubar_a_rodada(tmp_path, monkeypatch)
     linha = json.loads(caminho.read_text().splitlines()[0])
     assert linha["output"] is None
     assert "ValueError" in linha["error"]
+
+
+def test_rodar_config_ids_filtra_e_forca_reexecucao(tmp_path, monkeypatch):
+    chamadas = []
+
+    def extract_falso(client, text, few_shot=True):
+        chamadas.append(text)
+        return ExtractionResult(entries=[], needs_confirmation=False)
+
+    monkeypatch.setattr(run_mod, "extract", extract_falso)
+    preparar(tmp_path, monkeypatch, [{"id": "a", "text": "treino a"}, {"id": "b", "text": "treino b"}, {"id": "c", "text": "treino c"}])
+
+    run_mod.rodar_config("T")
+    assert len(chamadas) == 3
+
+    caminho = run_mod.rodar_config("T", ids={"a"})
+    assert len(chamadas) == 4  # só "a" rodou de novo
+
+    linhas = [json.loads(l) for l in caminho.read_text().splitlines()]
+    assert {l["id"] for l in linhas} == {"a", "b", "c"}  # b e c continuam no arquivo

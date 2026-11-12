@@ -10,6 +10,18 @@ def test_set_entry_aceita_peso_corporal():
     assert s.flag is None
 
 
+def test_set_entry_por_lado_e_rir_default():
+    s = SetEntry(weight_kg=7.5, reps=10)
+    assert s.por_lado is False
+    assert s.rir is None
+
+
+def test_set_entry_aceita_por_lado_e_rir():
+    s = SetEntry(weight_kg=7.5, reps=10, por_lado=True, rir=2)
+    assert s.por_lado is True
+    assert s.rir == 2
+
+
 def test_set_entry_flag_invalido_rejeitado():
     with pytest.raises(ValidationError):
         SetEntry(weight_kg=10, reps=10, flag="invalido")

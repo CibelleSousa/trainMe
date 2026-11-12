@@ -15,6 +15,9 @@ FEWSHOT_PATH = Path(__file__).resolve().parent.parent / "eval" / "data" / "fewsh
 REGRAS = """\
 Regras de leitura:
 - Cada "NxM" ou "série de M" com carga C gera N séries iguais (carga C, M repetições).
+- Anotação em linhas ("3 x 5kg x 12 reps" = N séries x carga x repetições, cada exercício
+  pode ter várias linhas assim, uma por bloco de séries iguais) também é entrada válida.
+  Erro de digitação óbvio ("9eps") vale como a intenção óbvia (9 reps).
 - Se o número de séries não for dito, use 3.
 - "Até a falha" sem "todas": marque flag "failure" só na última série do exercício.
   "Todas até a falha": marque "failure" em todas as séries de trabalho.
@@ -24,10 +27,16 @@ Regras de leitura:
 - Autocorreção ("na verdade foi 140"): use o valor final, ignore o valor substituído.
 - Repetição feita com ajuda do personal não conta: use o número sem ajuda.
 - Número aproximado ("uns 20 e poucos, acho que 22"): use o número dito (22).
-- "Cada lado" ou "cada" em halteres: use a carga dita, não multiplique.
-- Supino reto com barra: a pessoa fala só a anilha de um lado (ex.: "7,5 de sempre").
-  Devolva esse valor falado em weight_kg, sem somar a barra — a normalização por código
-  calcula o total depois. "Só a barra" = weight_kg 0.
+- "Cada lado" (barra ou máquina com anilhas): marque por_lado=true na série e devolva o
+  valor falado em weight_kg (sem multiplicar) — a normalização por código dobra depois.
+  "Cada" em halteres é a carga de um halter, NÃO marque por_lado, não multiplique.
+- RIR ("deixei 2 na reserva", "RIR 2"): marque rir=2 nas séries a que a frase se referir
+  ("em ambas", "em todas" = todas as séries de trabalho desse exercício). Sem menção, não
+  marque rir (deixe None). Ignore palavras de enchimento ("opa", "anota aí", "tá?").
+- Supino reto com barra: a pessoa fala só a anilha de um lado (ex.: "7,5 de sempre"), mesmo
+  sem dizer "cada lado" — é o padrão desse exercício. Devolva esse valor falado em
+  weight_kg, sem somar a barra — a normalização por código calcula o total depois.
+  "Só a barra" = weight_kg 0.
 - Devolva sempre exercise_raw como a pessoa falou (não normalize o nome do exercício).
 - Se a mensagem não tiver nenhum dado de série, devolva entries vazio e needs_confirmation=true.
 """
@@ -90,8 +99,10 @@ def normalizar_resultado(resultado: ExtractionResult) -> dict:
             needs_confirmation = True
         series = [
             {
-                "weight_kg": compute_weight(slug, s.weight_kg) if slug and s.weight_kg is not None else s.weight_kg,
+                "weight_kg": compute_weight(slug, s.weight_kg, s.por_lado) if slug and s.weight_kg is not None else s.weight_kg,
                 "reps": s.reps,
+                "por_lado": s.por_lado,
+                "rir": s.rir,
                 "flag": s.flag,
             }
             for s in entrada.sets

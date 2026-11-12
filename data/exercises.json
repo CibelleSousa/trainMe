@@ -31,7 +31,8 @@
       "crucifixo",
       "crucifixo maq",
       "peck deck",
-      "voador"
+      "voador",
+      "voador maquina"
     ]
   },
   {
@@ -61,10 +62,11 @@
     "nome": "Triceps Frances Polia",
     "grupo": "triceps",
     "aliases": [
-      "triceps frances",
+      "frances",
       "frances na polia",
       "frances polia",
-      "frances"
+      "triceps frances",
+      "triceps frances corda polia"
     ]
   },
   {
@@ -74,6 +76,9 @@
     "aliases": [
       "elevacao lateral",
       "elev lateral",
+      "elev lateral halter",
+      "elevacao lateral halteres",
+      "elevacao lateral com halteres",
       "lateral com halteres"
     ]
   },
@@ -95,8 +100,7 @@
     "aliases": [
       "puxada alta",
       "puxada",
-      "puxada na polia",
-      "pulldown"
+      "puxada na polia"
     ]
   },
   {
@@ -159,9 +163,7 @@
     "nome": "Biceps Maquina Alternado",
     "grupo": "biceps",
     "aliases": [
-      "biceps maq alternado",
-      "bicep maquina",
-      "biceps maquina"
+      "biceps maq alternado"
     ]
   },
   {
@@ -255,13 +257,16 @@
     "aliases": [
       "supino inclinado maquina",
       "inclinado maquina"
-    ]
+    ],
+    "barra_kg": 0,
+    "carga_modo": "por_lado_se_dito"
   },
   {
     "slug": "elevacao_lateral_polia",
     "nome": "Elevacao Lateral na Polia",
     "grupo": "ombro",
     "aliases": [
+      "elevacao lateral polia",
       "elevacao lateral na polia",
       "lateral na polia"
     ]
@@ -271,8 +276,9 @@
     "nome": "Triceps Corda",
     "grupo": "triceps",
     "aliases": [
-      "triceps na corda",
-      "corda"
+      "corda",
+      "triceps corda polia",
+      "triceps na corda"
     ]
   },
   {
@@ -292,6 +298,67 @@
     "aliases": [
       "biceps na polia",
       "rosca na polia"
+    ]
+  },
+  {
+    "slug": "supino_reto_maquina",
+    "nome": "Supino Reto Maquina",
+    "grupo": "peito",
+    "aliases": [
+      "supino reto maquina"
+    ]
+  },
+  {
+    "slug": "elevacao_frontal",
+    "nome": "Elevacao Frontal",
+    "grupo": "ombro",
+    "aliases": [
+      "elevacao frontal"
+    ]
+  },
+  {
+    "slug": "puxada_aberta_maquina",
+    "nome": "Puxada Aberta Maquina",
+    "grupo": "costas",
+    "aliases": [
+      "puxada aberta",
+      "puxada aberta maquina"
+    ]
+  },
+  {
+    "slug": "remada_baixa_unilateral_maquina",
+    "nome": "Remada Baixa Unilateral Maquina",
+    "grupo": "costas",
+    "aliases": [
+      "remada baixa unilateral",
+      "remada baixa unilateral maquina"
+    ]
+  },
+  {
+    "slug": "remada_aberta_maquina",
+    "nome": "Remada Aberta Maquina",
+    "grupo": "costas",
+    "aliases": [
+      "remada aberta",
+      "remada aberta maquina"
+    ]
+  },
+  {
+    "slug": "rosca_alternada_halteres",
+    "nome": "Rosca Alternada Halteres",
+    "grupo": "biceps",
+    "aliases": [
+      "rosca alternada",
+      "rosca alternada halteres"
+    ]
+  },
+  {
+    "slug": "biceps_maquina",
+    "nome": "Biceps Maquina",
+    "grupo": "biceps",
+    "aliases": [
+      "bicep maquina",
+      "biceps maquina"
     ]
   }
 ]

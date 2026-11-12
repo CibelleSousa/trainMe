@@ -37,14 +37,24 @@ def ids_ja_rodados(resultados_path: Path) -> set[str]:
     return {r["id"] for r in _ler_jsonl(resultados_path)}
 
 
-def rodar_config(nome_config: str, limit: int | None = None) -> Path:
+def rodar_config(nome_config: str, limit: int | None = None, ids: set[str] | None = None) -> Path:
     config = carregar_config(nome_config)
     exemplos = _ler_jsonl(DATASET_PATH)
-    if limit is not None:
+    if ids is not None:
+        exemplos = [e for e in exemplos if e["id"] in ids]
+    elif limit is not None:
         exemplos = exemplos[:limit]
 
     RESULTS_DIR.mkdir(exist_ok=True)
     resultados_path = RESULTS_DIR / f"{nome_config}.jsonl"
+
+    if ids is not None and resultados_path.exists():
+        # força reexecução desses ids: tira o resultado antigo deles do arquivo
+        restantes = [r for r in _ler_jsonl(resultados_path) if r["id"] not in ids]
+        with resultados_path.open("w", encoding="utf-8") as f:
+            for r in restantes:
+                f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
     feitos = ids_ja_rodados(resultados_path)
 
     client = criar_client(config["provider"], config.get("model"))
@@ -85,12 +95,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Roda a avaliação para uma config ou todas")
     parser.add_argument("--config", default="all")
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--ids", default=None, help="ids separados por vírgula, ex.: r001,r004")
     args = parser.parse_args()
 
     nomes = [p.stem for p in CONFIGS_DIR.glob("*.yaml")] if args.config == "all" else [args.config]
+    ids = set(args.ids.split(",")) if args.ids else None
 
     for nome in nomes:
-        caminho = rodar_config(nome, limit=args.limit)
+        caminho = rodar_config(nome, limit=args.limit, ids=ids)
         print(f"{nome}: resultados em {caminho}")
 
 

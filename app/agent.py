@@ -3,6 +3,7 @@ from datetime import date as date_type
 from sqlmodel import Session as DbSession
 from sqlmodel import select
 
+from app.exercises import carga_modo_do_exercicio
 from app.extract import criar_client, extract, normalizar_resultado
 from app.llm.base import LLMClient
 from app.models import ExerciseLog, Session, SetLog
@@ -14,7 +15,7 @@ MENSAGEM_SCHEMA = {
     "required": ["mensagem"],
 }
 
-MAX_PASSOS = 3
+FAIXA_AMBIGUIDADE_LADO = (0.4, 0.6)
 
 
 def log_sets(db: DbSession, data: date_type, raw_text: str, com_personal: bool, normalizado: dict) -> dict:
@@ -96,6 +97,38 @@ def _pergunta_confirmacao(normalizado: dict) -> str:
     return "Não encontrei dados de série nessa mensagem. Pode repetir com exercício, carga e repetições?"
 
 
+def _ultima_carga_historico(historico: list[dict]) -> float | None:
+    for sessao in reversed(historico):
+        for s in sessao["sets"]:
+            if s.get("weight_kg") is not None:
+                return s["weight_kg"]
+    return None
+
+
+def ambiguidade_de_lado(entrada: dict, historico: list[dict]) -> bool:
+    if carga_modo_do_exercicio(entrada["exercise_slug"]) == "anilhas_por_lado":
+        return False
+    if not entrada["sets"]:
+        return False
+
+    primeira_serie = entrada["sets"][0]
+    if primeira_serie.get("por_lado"):
+        return False
+
+    carga = primeira_serie.get("weight_kg")
+    ultima = _ultima_carga_historico(historico)
+    if carga is None or not ultima:
+        return False
+
+    piso, topo = FAIXA_AMBIGUIDADE_LADO
+    return piso <= carga / ultima <= topo
+
+
+def _pergunta_lado(entrada: dict) -> str:
+    carga = entrada["sets"][0]["weight_kg"]
+    return f"A carga de {carga}kg em {entrada['exercise_raw']!r} é por lado (cada anilha/halter) ou o total? Pode confirmar antes de eu salvar?"
+
+
 class Agent:
     def __init__(self, primary: LLMClient | None = None, fallback: LLMClient | None = None):
         self.primary = primary or criar_client("gemini")
@@ -121,18 +154,21 @@ class Agent:
         if normalizado["needs_confirmation"]:
             return _pergunta_confirmacao(normalizado)
 
-        passos = 0
+        primeiro = next((e for e in normalizado["entries"] if e["exercise_slug"]), None)
+
+        historico = []
+        if primeiro:
+            historico = get_history(db, primeiro["exercise_slug"])
+            if ambiguidade_de_lado(primeiro, historico):
+                return _pergunta_lado(primeiro)
+
         resumo_log = log_sets(db, data, text, com_personal, normalizado)
-        passos += 1
         tool_outputs = {"log_sets": resumo_log}
 
-        primeiro = next((e for e in resumo_log["exercicios"] if e["slug"]), None)
-        if primeiro and passos < MAX_PASSOS:
-            historico = get_history(db, primeiro["slug"])
-            tool_outputs["get_history"] = historico
-            passos += 1
-            if passos < MAX_PASSOS:
-                tool_outputs["suggest_next"] = suggest_next_tool(historico)
-                passos += 1
+        if primeiro:
+            sessao_atual = {"com_personal": com_personal, "sets": primeiro["sets"]}
+            historico_atualizado = historico + [sessao_atual]
+            tool_outputs["get_history"] = historico_atualizado
+            tool_outputs["suggest_next"] = suggest_next_tool(historico_atualizado)
 
         return self._compor_mensagem(_prompt_mensagem_final(tool_outputs))

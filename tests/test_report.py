@@ -49,6 +49,46 @@ def test_comparar_exemplo_output_none_conta_como_invalido():
     assert r["exact"] is False
 
 
+def expected_com_rir():
+    return {
+        "entries": [
+            {"exercise": "leg_press_inclinado", "sets": [{"weight_kg": 100.0, "reps": 10, "flag": None, "rir": 2}]}
+        ],
+        "needs_confirmation": False,
+    }
+
+
+def test_comparar_exemplo_rir_certo():
+    output = {"entries": [{"exercise_raw": "leg press", "sets": [{"weight_kg": 100.0, "reps": 10, "rir": 2, "flag": None}]}]}
+    r = comparar_exemplo(expected_com_rir(), output)
+    assert r["serie_ok"] == 1
+    assert r["erros"] == []
+
+
+def test_comparar_exemplo_rir_errado():
+    output = {"entries": [{"exercise_raw": "leg press", "sets": [{"weight_kg": 100.0, "reps": 10, "rir": 0, "flag": None}]}]}
+    r = comparar_exemplo(expected_com_rir(), output)
+    assert r["serie_ok"] == 0
+    assert any(e.startswith("RIR ERRADO") for e in r["erros"])
+
+
+def test_comparar_exemplo_ignora_rir_quando_esperado_nao_define():
+    output = {"entries": [{"exercise_raw": "supino", "sets": [{"weight_kg": 7.5, "reps": 10, "rir": 3, "flag": None}]}]}
+    r = comparar_exemplo(expected_simples(), output)
+    assert r["serie_ok"] == 1
+    assert r["erros"] == []
+
+
+def test_normalizar_saida_dobra_peso_por_lado_se_dito():
+    output = {
+        "entries": [
+            {"exercise_raw": "supino inclinado maquina", "sets": [{"weight_kg": 12.0, "reps": 10, "por_lado": True, "flag": None}]}
+        ]
+    }
+    normalizado = normalizar_saida(output)
+    assert normalizado["entries"][0]["sets"][0]["weight_kg"] == 24.0
+
+
 def test_relatorio_mostra_exato_com_e_sem_ambiguo(monkeypatch):
     avals = [
         {"id": "a", "source": "real", "tags": ["ambiguo"], "latency_s": 1.0, "exact": False, "ex_ok": 0, "ex_total": 1, "serie_ok": 0, "serie_total": 1, "json_valido": True, "erros": [], "output": None},
@@ -61,6 +101,23 @@ def test_relatorio_mostra_exato_com_e_sem_ambiguo(monkeypatch):
     assert "exato_sem_ambiguo" in relatorio
     assert "1/2 (50%)" in relatorio
     assert "2/2 (100%)" in relatorio
+
+
+def test_gerar_relatorio_filtra_dataset_por_ids(monkeypatch):
+    datasets_recebidos = []
+
+    def avaliar_config_falso(nome, dataset):
+        datasets_recebidos.append(dataset)
+        return []
+
+    monkeypatch.setattr(report_mod, "avaliar_config", avaliar_config_falso)
+    monkeypatch.setattr(
+        report_mod, "_ler_jsonl", lambda caminho: [{"id": "a"}, {"id": "b"}, {"id": "c"}]
+    )
+
+    report_mod.gerar_relatorio(["X"], ids={"a", "c"})
+
+    assert {e["id"] for e in datasets_recebidos[0]} == {"a", "c"}
 
 
 def test_tags_com_n_pequeno_agrupam_em_outras(monkeypatch):

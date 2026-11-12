@@ -4,7 +4,7 @@ from sqlmodel import SQLModel, create_engine, select
 from sqlmodel import Session as DbSession
 
 import app.agent as agent_mod
-from app.agent import Agent, get_history, log_sets
+from app.agent import Agent, ambiguidade_de_lado, get_history, log_sets
 from app.models import ExerciseLog, SetLog
 
 
@@ -136,3 +136,61 @@ def test_agent_respeita_no_maximo_3_passos_com_varios_exercicios(monkeypatch):
 
     assert len(chamadas_history) == 1
     assert len(chamadas_suggest) == 1
+
+
+def entrada(slug, peso, por_lado=False):
+    return {"exercise_raw": "x", "exercise_slug": slug, "sets": [{"weight_kg": peso, "reps": 10, "por_lado": por_lado, "rir": None, "flag": None}]}
+
+
+def historico_com_carga(peso):
+    return [{"com_personal": False, "sets": [{"weight_kg": peso, "reps": 10, "flag": None}]}]
+
+
+def test_ambiguidade_de_lado_marca_quando_nova_carga_e_cerca_da_metade():
+    assert ambiguidade_de_lado(entrada("supino_inclinado_maquina", 7.5), historico_com_carga(15.0)) is True
+
+
+def test_ambiguidade_de_lado_nao_marca_quando_carga_igual():
+    assert ambiguidade_de_lado(entrada("supino_inclinado_maquina", 15.0), historico_com_carga(15.0)) is False
+
+
+def test_ambiguidade_de_lado_nao_marca_quando_por_lado_explicito():
+    assert ambiguidade_de_lado(entrada("supino_inclinado_maquina", 7.5, por_lado=True), historico_com_carga(15.0)) is False
+
+
+def test_ambiguidade_de_lado_nao_marca_sem_historico():
+    assert ambiguidade_de_lado(entrada("supino_inclinado_maquina", 7.5), []) is False
+
+
+def test_ambiguidade_de_lado_nao_vale_pra_anilhas_por_lado():
+    assert ambiguidade_de_lado(entrada("supino_reto_barra", 7.5), historico_com_carga(15.0)) is False
+
+
+def test_agent_pergunta_por_lado_quando_carga_e_cerca_da_metade_do_historico():
+    db = db_memoria()
+    log_sets(
+        db,
+        date(2026, 11, 9),
+        "supino inclinado maquina com 15",
+        False,
+        {
+            "entries": [
+                {"exercise_raw": "supino inclinado maquina", "exercise_slug": "supino_inclinado_maquina", "sets": [{"weight_kg": 15.0, "reps": 10, "flag": None}]}
+            ],
+            "needs_confirmation": False,
+        },
+    )
+
+    extracao = {
+        "entries": [{"exercise_raw": "supino inclinado maquina", "sets": [{"weight_kg": 7.5, "reps": 10, "flag": None}]}],
+        "needs_confirmation": False,
+    }
+    primary = ClientFalso(respostas=[extracao])
+    fallback = ClientFalso()
+    agente = Agent(primary=primary, fallback=fallback)
+
+    resposta = agente.handle_message(db, "supino inclinado maquina 1x10 com 7,5", date(2026, 11, 11))
+
+    assert "por lado" in resposta.lower()
+    assert len(primary.chamadas) == 1  # não chamou a LLM de novo pra compor mensagem
+    assert len(db.exec(select(ExerciseLog)).all()) == 1  # só a sessão anterior, não gravou a nova

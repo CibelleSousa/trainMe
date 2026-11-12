@@ -23,8 +23,11 @@ def normalizar_saida(output: dict) -> dict:
         slug = normalize_exercise(e["exercise_raw"])
         sets = [
             {
-                "weight_kg": compute_weight(slug, s["weight_kg"]) if slug and s.get("weight_kg") is not None else s.get("weight_kg"),
+                "weight_kg": compute_weight(slug, s["weight_kg"], s.get("por_lado", False))
+                if slug and s.get("weight_kg") is not None
+                else s.get("weight_kg"),
                 "reps": s["reps"],
+                "rir": s.get("rir"),
                 "flag": s.get("flag"),
             }
             for s in e.get("sets", [])
@@ -85,7 +88,9 @@ def comparar_exemplo(expected: dict, output: dict | None) -> dict:
                 continue
             peso_ok = _peso_bate(s_exp.get("weight_kg"), s_obt.get("weight_kg"))
             reps_ok = s_exp.get("reps") == s_obt.get("reps")
-            if peso_ok and reps_ok:
+            rir_esperado = s_exp.get("rir")
+            rir_ok = rir_esperado is None or rir_esperado == s_obt.get("rir")
+            if peso_ok and reps_ok and rir_ok:
                 serie_ok += 1
             else:
                 exact = False
@@ -96,6 +101,10 @@ def comparar_exemplo(expected: dict, output: dict | None) -> dict:
                 if not reps_ok:
                     erros.append(
                         f"reps errada: {slug_exp} série {j + 1}: esperado {s_exp.get('reps')}, obtido {s_obt.get('reps')}"
+                    )
+                if not rir_ok:
+                    erros.append(
+                        f"RIR ERRADO: {slug_exp} série {j + 1}: esperado {rir_esperado}, obtido {s_obt.get('rir')}"
                     )
         if len(sets_obt) > len(sets_exp):
             exact = False
@@ -162,8 +171,10 @@ def tabela_markdown(linhas: list[dict], colunas: list[str]) -> str:
     return "\n".join([cabecalho, separador, corpo])
 
 
-def gerar_relatorio(nomes_config: list[str]) -> str:
+def gerar_relatorio(nomes_config: list[str], ids: set[str] | None = None) -> str:
     dataset = _ler_jsonl(DATASET_PATH)
+    if ids is not None:
+        dataset = [e for e in dataset if e["id"] in ids]
     partes = []
 
     todas_avaliacoes: dict[str, list[dict]] = {}
@@ -262,13 +273,16 @@ def gerar_relatorio(nomes_config: list[str]) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--configs", nargs="+", default=None)
+    parser.add_argument("--ids", default=None, help="ids separados por vírgula, ex.: r001,r004")
     args = parser.parse_args()
 
     nomes = args.configs or sorted(p.stem for p in RESULTS_DIR.glob("*.jsonl"))
-    relatorio = gerar_relatorio(nomes)
+    ids = set(args.ids.split(",")) if args.ids else None
+    relatorio = gerar_relatorio(nomes, ids=ids)
     print(relatorio)
 
-    (RESULTS_DIR / "report.md").write_text(relatorio, encoding="utf-8")
+    if ids is None:
+        (RESULTS_DIR / "report.md").write_text(relatorio, encoding="utf-8")
 
 
 if __name__ == "__main__":

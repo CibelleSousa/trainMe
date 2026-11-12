@@ -8,6 +8,8 @@ SetFlag = Literal["failure", "dropset", "warmup"]
 class SetEntry(BaseModel):
     weight_kg: float | None = None
     reps: int
+    por_lado: bool = False
+    rir: int | None = None
     flag: SetFlag | None = None
 
 
