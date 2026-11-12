@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Treino em linguagem natural</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+  textarea { width: 100%; min-height: 100px; font-size: 1rem; padding: 8px; box-sizing: border-box; }
+  .linha { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+  button { font-size: 1rem; padding: 8px 16px; cursor: pointer; }
+  #mic.gravando { background: #e03131; color: white; }
+  #resposta { margin-top: 20px; padding: 12px; background: #f1f3f5; border-radius: 6px; white-space: pre-wrap; min-height: 1.2em; }
+  #status { color: #888; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+  <h1>Treino em linguagem natural</h1>
+  <p>Escreva ou grave seu treino em português.</p>
+
+  <textarea id="texto" placeholder="Ex.: supino reto 3x10 com 80, remada serrote 3x10 com 40"></textarea>
+  <div class="linha">
+    <button id="mic" type="button">🎙️ Gravar</button>
+    <button id="enviar" type="button">Enviar</button>
+    <span id="status"></span>
+  </div>
+
+  <div id="resposta"></div>
+
+  <script>
+    const texto = document.getElementById("texto");
+    const micBtn = document.getElementById("mic");
+    const enviarBtn = document.getElementById("enviar");
+    const statusEl = document.getElementById("status");
+    const respostaEl = document.getElementById("resposta");
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let reconhecimento = null;
+    let gravando = false;
+
+    if (SpeechRecognition) {
+      reconhecimento = new SpeechRecognition();
+      reconhecimento.lang = "pt-BR";
+      reconhecimento.interimResults = false;
+      reconhecimento.continuous = false;
+
+      reconhecimento.onresult = (evento) => {
+        const transcrito = evento.results[0][0].transcript;
+        texto.value = (texto.value ? texto.value + " " : "") + transcrito;
+      };
+      reconhecimento.onerror = (evento) => {
+        statusEl.textContent = "Erro no microfone: " + evento.error;
+      };
+      reconhecimento.onend = () => {
+        gravando = false;
+        micBtn.classList.remove("gravando");
+        micBtn.textContent = "🎙️ Gravar";
+        statusEl.textContent = "";
+      };
+    } else {
+      micBtn.disabled = true;
+      micBtn.title = "Seu navegador não suporta reconhecimento de voz (use Chrome/Chromium)";
+    }
+
+    micBtn.addEventListener("click", () => {
+      if (!reconhecimento) return;
+      if (gravando) {
+        reconhecimento.stop();
+        return;
+      }
+      gravando = true;
+      micBtn.classList.add("gravando");
+      micBtn.textContent = "⏹️ Parar";
+      statusEl.textContent = "Ouvindo...";
+      reconhecimento.start();
+    });
+
+    async function enviar() {
+      const valor = texto.value.trim();
+      if (!valor) return;
+      enviarBtn.disabled = true;
+      respostaEl.textContent = "Enviando...";
+      try {
+        const resp = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: valor }),
+        });
+        const dados = await resp.json();
+        respostaEl.textContent = resp.ok ? dados.reply : "Erro: " + (dados.detail || resp.status);
+        if (resp.ok) texto.value = "";
+      } catch (erro) {
+        respostaEl.textContent = "Erro de conexão: " + erro;
+      } finally {
+        enviarBtn.disabled = false;
+      }
+    }
+
+    enviarBtn.addEventListener("click", enviar);
+  </script>
+</body>
+</html>

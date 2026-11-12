@@ -38,4 +38,4 @@ LLMs: Ollama local (`qwen3:8b`, GPU de 8 GB) e API do Gemini (`google-genai`). C
 - [x] Etapa 2: clientes LLM e extract.py
 - [x] Etapa 3: dataset, validador, harness e relatório
 - [x] Etapa 4 (P1): agente com ferramentas e API
-- [ ] Etapa 5 (P2): página com microfone (Web Speech API), export CSV, Docker, README
+- [x] Etapa 5 (P2): página com microfone (Web Speech API), export CSV, Docker, README
