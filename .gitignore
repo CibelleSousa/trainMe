@@ -7,3 +7,10 @@ __pycache__/
 *.sqlite3
 .pytest_cache/
 *.egg-info/
+app/static/app/
+frontend/node_modules/
+frontend/dist/
+frontend/.output/
+frontend/.vinxi/
+frontend/.nitro/
+frontend/.tanstack/

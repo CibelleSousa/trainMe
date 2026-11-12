@@ -84,6 +84,9 @@ def test_agent_salva_e_compoe_mensagem_so_com_dados_das_ferramentas():
     assert schema_final == agent_mod.MENSAGEM_SCHEMA
     assert "log_sets" in prompt_final
 
+    assert agente.ultimo_provider == "gemini"
+    assert agente.ultimo_fallback_motivo is None
+
 
 def test_agent_needs_confirmation_pergunta_sem_gravar():
     db = db_memoria()
@@ -112,6 +115,37 @@ def test_agent_usa_fallback_quando_primary_falha_na_extracao():
 
     assert resposta == "ok via fallback"
     assert len(db.exec(select(ExerciseLog)).all()) == 1
+    assert agente.ultimo_provider == "ollama"
+    assert agente.ultimo_fallback_motivo is not None
+
+
+class ErroComCodigo(Exception):
+    def __init__(self, code):
+        self.code = code
+        super().__init__("erro da api")
+
+
+def test_agente_registra_motivo_com_codigo_http_sem_vazar_mensagem_crua():
+    db = db_memoria()
+
+    class ClientComCodigoNaExtracao:
+        def __init__(self):
+            self.chamadas = 0
+
+        def extract(self, text, schema):
+            self.chamadas += 1
+            if self.chamadas == 1:
+                raise ErroComCodigo(429)
+            return {"mensagem": "ok"}
+
+    primary = ClientComCodigoNaExtracao()
+    fallback = ClientFalso(respostas=[extracao_supino()])
+    agente = Agent(primary=primary, fallback=fallback)
+
+    agente.handle_message(db, "supino 3x10 com 80", date(2026, 11, 11))
+
+    assert agente.ultimo_fallback_motivo == "ErroComCodigo 429"
+    assert "erro da api" not in agente.ultimo_fallback_motivo
 
 
 def test_agent_respeita_no_maximo_3_passos_com_varios_exercicios(monkeypatch):

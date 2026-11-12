@@ -148,25 +148,52 @@ def carga_implausivel(entrada: dict, historico: list[dict]) -> bool:
     return razao > 1.5 or (piso <= razao <= topo)
 
 
+def _motivo_erro(erro: Exception) -> str:
+    # Só tipo do erro + código HTTP se tiver (ex.: 429, 503); nunca a mensagem
+    # crua, que pode ecoar o texto do pedido em erro de validação da API.
+    codigo = getattr(erro, "code", None)
+    return f"{type(erro).__name__} {codigo}" if codigo else type(erro).__name__
+
+
 class Agent:
-    def __init__(self, primary: LLMClient | None = None, fallback: LLMClient | None = None):
+    def __init__(
+        self,
+        primary: LLMClient | None = None,
+        fallback: LLMClient | None = None,
+        primary_name: str = "gemini",
+        fallback_name: str = "ollama",
+    ):
         self.primary = primary or criar_client("gemini")
         self.fallback = fallback or criar_client("ollama")
+        self.primary_name = primary_name
+        self.fallback_name = fallback_name
+        self.ultimo_provider: str | None = None
+        self.ultimo_fallback_motivo: str | None = None
 
     def _extrair(self, text: str):
         try:
-            return extract(self.primary, text)
-        except Exception:
-            return extract(self.fallback, text)
+            resultado = extract(self.primary, text)
+            self.ultimo_provider = self.primary_name
+            return resultado
+        except Exception as erro:
+            self.ultimo_fallback_motivo = _motivo_erro(erro)
+            resultado = extract(self.fallback, text)
+            self.ultimo_provider = self.fallback_name
+            return resultado
 
     def _compor_mensagem(self, prompt: str) -> str:
         try:
             saida = self.primary.extract(prompt, MENSAGEM_SCHEMA)
-        except Exception:
+            self.ultimo_provider = self.primary_name
+        except Exception as erro:
+            self.ultimo_fallback_motivo = _motivo_erro(erro)
             saida = self.fallback.extract(prompt, MENSAGEM_SCHEMA)
+            self.ultimo_provider = self.fallback_name
         return saida["mensagem"]
 
     def handle_message(self, db: DbSession, text: str, data: date_type, com_personal: bool = False) -> str:
+        self.ultimo_provider = None
+        self.ultimo_fallback_motivo = None
         resultado = self._extrair(text)
         normalizado = normalizar_resultado(resultado)
 
