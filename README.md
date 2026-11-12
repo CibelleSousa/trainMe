@@ -9,6 +9,12 @@ avaliação que compara configurações de extração.
 A sugestão de progressão é uma heurística (dupla progressão simples), **não
 é recomendação profissional**.
 
+## Demonstração
+
+| Histórico com sugestão da próxima sessão | Gravando por voz | Voz virando texto no campo |
+|---|---|---|
+| ![Tela com o histórico e a sugestão de carga/reps da próxima sessão](docs/img/frontend-default.jpg) | ![Orb ativo e chip "Ouvindo" durante a gravação por voz](docs/img/frontend-recording-1.jpg) | ![Fala já transcrita no campo de texto antes de enviar](docs/img/frontend-recording-2.jpg) |
+
 ## O que faz
 
 1. Você escreve ou fala o treino (ex.: "remada serrote 3x10 com 40").
