@@ -40,7 +40,13 @@ cp .env.example .env   # preencha GEMINI_API_KEY e GEMINI_MODEL
 
 - Testes: `pytest -q`
 - CLI de extração: `python -m app.extract "supino 3x10 com 80" --provider gemini`
-- API + página web: `uvicorn app.main:app --reload` e abra `http://localhost:8000`
+- Gerar a interface (uma vez, ou depois de mudar `frontend/`):
+  ```bash
+  cd frontend && npm install && npx vite build --config vite.static.config.ts
+  cd ..
+  ```
+  O `docker compose up` já faz esse passo sozinho, dentro da imagem.
+- API + interface web: `uvicorn app.main:app --reload` e abra `http://localhost:8000`
 - Avaliação:
   ```bash
   python -m eval.validate
@@ -67,11 +73,13 @@ python -m app.seed
 uvicorn app.main:app --reload
 ```
 
-### Página web (P2)
+### Interface web
 
-Campo de texto + botão de microfone (Web Speech API, `pt-BR`). Funciona no
-Chrome/Chromium — o Firefox não suporta a API de voz. A voz é só uma camada
-de entrada de texto; a avaliação é feita sempre em texto.
+Tela em React (Vite), buildada como bundle estático e servida pelo FastAPI em
+`/`. Tem campo de texto editável e botão de microfone (Web Speech API,
+`pt-BR`) — funciona melhor no Chrome (o Firefox não suporta a API de voz). A
+página mínima original (sem React) continua disponível em `/simple`. A voz é
+só uma camada de entrada de texto; a avaliação é feita sempre em texto.
 
 ## Configurações comparadas
 
@@ -157,6 +165,8 @@ Observados rodando os exemplos reais (`r001`–`r006`) nas configs B, C e D
 |---|---|---|
 | `r006` | As 3 configs marcaram `rir=2` só nas 2 séries de 8kg, não nas 3 séries do exercício | "deixei 2 na reserva em ambas" é ambíguo — "ambas" pode significar as duas séries de 8kg (leitura do LLM) ou os dois grupos de série (leitura do rótulo) |
 | `r001` (Qwen, config D) | Trocou `elevacao_lateral_polia` por `elevacao_lateral_halteres` e a carga (6kg em vez de 5kg) | sem few-shot suficiente pra essa ambiguidade específica do histórico da autora |
-| `r001` (Gemini, configs B/C) | Repetições 12 em vez de 10 | não aplicou a regra "repetição com ajuda do personal não conta" |
+| `r001` (Gemini, config C) | Repetições 12 em vez de 10 | não aplicou a regra "repetição com ajuda do personal não conta" (na rodada final, config B já acertou esse caso — inconsistência entre rodadas, não um erro sistemático de B) |
 | `r005` (Qwen, config D) | Perdeu 1 série de `supino_inclinado_maquina` | formato de anotação em linhas (`N x carga x reps`) com séries por bloco — Qwen não expandiu um dos blocos |
 | `r002` | Confunde a segunda ocorrência de "cadeira abdutora" | ambíguo no próprio texto: a autora disse "abdutora" duas vezes pra dois aparelhos diferentes (tag `ambiguo`) — não dá pra resolver só com o texto |
+
+Licença: MIT
