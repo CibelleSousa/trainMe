@@ -44,6 +44,10 @@ cp .env.example .env   # preencha GEMINI_API_KEY e GEMINI_MODEL
 - Exportar histórico: `GET /export.csv`
 - Docker: `docker compose up` (sobe a API na porta 8000; precisa do `.env`)
 
+O LLM só faz duas coisas: extrai os dados do texto e redige a mensagem final.
+Normalização de exercício, cálculo de carga e regra de progressão são código
+puro, com teste — nenhum número que o usuário vê sai direto do modelo.
+
 ### Demonstração com histórico de exemplo
 
 `python -m app.seed` carrega `data/progression_sim.csv` (histórico **simulado**,
@@ -74,34 +78,69 @@ de entrada de texto; a avaliação é feita sempre em texto.
 
 ## Resultados
 
-TODO — rodar `python -m eval.run --config all` com o dataset final e
-`python -m eval.report`, e colar aqui a tabela com k/n por configuração,
-por fonte (`real`/`reconstruido`/`sintetico`) e por tag. As rodadas feitas
-até agora foram parciais (algumas por amostra, com `--ids`), feitas pra
-validar o código, não pra tirar conclusão final.
+Dataset completo: 52 exemplos (6 `real`, 46 `sintetico`). Rodada final em
+`results/*.jsonl`, relatório completo em `results/report.md`.
 
-## Limitações
+| Config | Exercício | Série | Exato | Latência med. |
+|---|---|---|---|---|
+| A — qwen3:8b zero-shot | 92% | 39% | 13% | 8,2 s |
+| B — Gemini 3.1 Flash Lite zero-shot | 99% | 97% | 94% | 4,4 s |
+| C — Gemini 3.1 Flash Lite few-shot | 99% | 98% | 92% | 6,5 s |
+| D — qwen3:8b few-shot | 88% | 80% | 67% | 10,0 s |
 
-- Dataset pequeno: 52 exemplos no momento (meta do SPEC é ~60).
-- 46 dos 52 exemplos são `sintetico` (gerados a partir do histórico
-  simulado e revisados), só 6 são `real` (escritos/ditos pela autora). Não
-  há `reconstruido` ainda. Com tão poucos exemplos `real`, as métricas por
-  fonte não sustentam uma afirmação de "o sistema funciona bem no mundo
-  real" — só no que foi medido.
+- Few-shot ajuda muito o modelo local: Qwen vai de 13% (A) pra 67% (D) de
+  acerto exato. Sem exemplo no prompt, ele não expande direito `NxM` nem
+  o formato de anotação em linhas.
+- No Gemini, B e C são basicamente equivalentes (94% vs 92%) — a
+  diferença é 1 exemplo num total de 52, dentro do ruído. Few-shot não
+  mostrou ganho claro pro Gemini neste dataset.
+- Os 46 exemplos `sintetico` foram escritos com ajuda de um LLM a partir
+  do histórico estruturado, o que favorece o próprio modelo que os
+  avalia (viés de estilo de frase). Nos 6 exemplos `real` o desempenho
+  cai: B acerta 4 de 6 (67%) exato, bem abaixo dos 98% nos sintéticos.
+- Erro que se repete: `r002`, onde a autora disse "cadeira abdutora" duas
+  vezes se referindo a dois aparelhos diferentes (`adutora`/`abdutora`) —
+  tag `ambiguo` no dataset, o texto em si não dá pra resolver.
+- n=52 é pequeno, principalmente pro recorte `real` (6). Os números acima
+  são indicativos, não uma medida definitiva de qual config é "melhor".
+
+## Limitações e próximos passos
+
+- Dataset pequeno: 52 exemplos no momento (meta do SPEC é ~60), e 46 dos
+  52 são `sintetico`. Não há `reconstruido` ainda. Com só 6 exemplos
+  `real`, as métricas por fonte não sustentam uma afirmação de "o sistema
+  funciona bem no mundo real" — só no que foi medido (ver Resultados).
+- O texto dos exemplos `sintetico` foi escrito pelo Gemini a partir das
+  linhas estruturadas do CSV simulado, revisado pela autora — favorece
+  estilos de frase que o próprio Gemini sabe gerar, um viés real na
+  avaliação, não só uma limitação de tamanho.
 - O histórico de progressão em `data/progression_sim.csv` é **simulado**:
   reconstruído de trás para frente a partir das cargas reais da semana de
   09–11/11/2026, com dupla progressão 8–12. As 3 sessões reais (24/05,
-  25/05 e 07/06/2026) são uma amostra pequena à parte.
-  A sugestão de progressão é validada por teste unitário, não por dado
-  real suficiente pra medir "evolução".
-- O texto dos exemplos `sintetico` foi escrito pelo Gemini a partir das
-  linhas estruturadas do CSV simulado (estruturado → texto), revisado pela
-  autora. Isso favorece estilos de frase que o próprio Gemini sabe gerar —
-  um viés real na avaliação, não só uma limitação de tamanho.
-- A regra de ambiguidade de lado no agente (Etapa 4) olha só o primeiro
-  exercício reconhecido da mensagem, pra não gastar as 3 chamadas de
-  ferramenta nisso; mensagens com vários exercícios não ambíguos num
-  mesmo pedido não passam pela checagem nos demais.
+  25/05 e 07/06/2026) são uma amostra pequena à parte. A sugestão de
+  progressão é validada por teste unitário, não por dado real suficiente
+  pra medir "evolução".
+- A regra de ambiguidade de lado no agente olha só o primeiro exercício
+  reconhecido da mensagem, pra não gastar as 3 chamadas de ferramenta
+  nisso; mensagens com vários exercícios não ambíguos num mesmo pedido
+  não passam pela checagem nos demais.
+- Voz usa o reconhecimento de fala do próprio navegador (Web Speech API),
+  não um modelo próprio: no Chrome Android ela pode repetir ou cortar o
+  texto no meio da fala (mitigado, mas é limitação do navegador, não do
+  app). O orb pulsa de forma sintética enquanto ouve — não reage ao
+  volume real da voz.
+- Pela interface não dá pra marcar "treino com personal" nem registrar
+  ou exportar repetições na reserva (RIR) — o schema e o CSV já têm os
+  campos, só falta o caminho na tela.
+- A demonstração roda no notebook da autora, exposta por túnel HTTPS pro
+  celular. Sem autenticação: quem tiver o link do túnel acessa o chat e o
+  histórico.
+
+### Próximos passos
+
+- Ampliar o dataset com mais exemplos `real` e `reconstruido`.
+- Dataset no Hugging Face com dataset card.
+- Expor "com personal" e RIR na tela.
 
 ## Erros conhecidos (análise qualitativa, dataset atual)
 
@@ -115,10 +154,3 @@ Observados rodando os exemplos reais (`r001`–`r006`) nas configs B, C e D
 | `r001` (Gemini, configs B/C) | Repetições 12 em vez de 10 | não aplicou a regra "repetição com ajuda do personal não conta" |
 | `r005` (Qwen, config D) | Perdeu 1 série de `supino_inclinado_maquina` | formato de anotação em linhas (`N x carga x reps`) com séries por bloco — Qwen não expandiu um dos blocos |
 | `r002` | Confunde a segunda ocorrência de "cadeira abdutora" | ambíguo no próprio texto: a autora disse "abdutora" duas vezes pra dois aparelhos diferentes (tag `ambiguo`) — não dá pra resolver só com o texto |
-
-## Próximos passos
-
-- Rodar a avaliação final completa (`eval.run --config all` sem `--ids`) e
-  preencher a seção de Resultados.
-- Ampliar o dataset com mais exemplos `real` e `reconstruido`.
-- Dataset no Hugging Face com dataset card.

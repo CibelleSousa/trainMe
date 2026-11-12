@@ -4,7 +4,9 @@ import time
 
 from google import genai
 from google.genai import types
-from google.genai.errors import ClientError
+from google.genai.errors import ClientError, ServerError
+
+CODIGOS_COM_RETRY = {429, 500, 503, 504}
 
 
 def _variavel_obrigatoria(nome: str) -> str:
@@ -15,7 +17,7 @@ def _variavel_obrigatoria(nome: str) -> str:
 
 
 class GeminiClient:
-    def __init__(self, model: str | None = None, api_key: str | None = None, max_retries: int = 3):
+    def __init__(self, model: str | None = None, api_key: str | None = None, max_retries: int = 5):
         self.model = model or _variavel_obrigatoria("GEMINI_MODEL")
         self.max_retries = max_retries
         self._client = genai.Client(api_key=api_key or _variavel_obrigatoria("GEMINI_API_KEY"))
@@ -34,8 +36,8 @@ class GeminiClient:
                     ),
                 )
                 return json.loads(resposta.text)
-            except ClientError as erro:
-                if erro.code == 429 and tentativa < self.max_retries - 1:
+            except (ClientError, ServerError) as erro:
+                if erro.code in CODIGOS_COM_RETRY and tentativa < self.max_retries - 1:
                     time.sleep(espera)
                     espera *= 2
                     continue
