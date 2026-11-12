@@ -19,8 +19,10 @@ A sugestão de progressão é uma heurística (dupla progressão simples), **nã
    carga/repetição pra próxima sessão.
 5. O LLM escreve a mensagem final, usando só os números que o código
    calculou — nenhum número mostrado vem direto do texto do modelo.
-6. Se o exercício não é reconhecido, ou a carga é ambígua (pode ser "por
-   lado" ou total), o agente pergunta antes de gravar.
+6. Se o exercício não é reconhecido, ou a carga calculada é implausível
+   frente ao histórico (mais de 1,5× a última, ou entre 40% e 60% dela —
+   sinal de que pode ser "por lado" em vez do total), o agente pergunta
+   antes de gravar.
 
 ## Como rodar
 
@@ -41,6 +43,19 @@ cp .env.example .env   # preencha GEMINI_API_KEY e GEMINI_MODEL
   ```
 - Exportar histórico: `GET /export.csv`
 - Docker: `docker compose up` (sobe a API na porta 8000; precisa do `.env`)
+
+### Demonstração com histórico de exemplo
+
+`python -m app.seed` carrega `data/progression_sim.csv` (histórico **simulado**,
+ver Limitações) no banco, pra já ter algumas sessões anteriores e ver a
+sugestão de progressão funcionando sem precisar digitar semanas de treino
+antes. Pode rodar de novo sem medo: é idempotente, não duplica sessão já
+carregada.
+
+```bash
+python -m app.seed
+uvicorn app.main:app --reload
+```
 
 ### Página web (P2)
 

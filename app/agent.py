@@ -129,6 +129,25 @@ def _pergunta_lado(entrada: dict) -> str:
     return f"A carga de {carga}kg em {entrada['exercise_raw']!r} é por lado (cada anilha/halter) ou o total? Pode confirmar antes de eu salvar?"
 
 
+def carga_implausivel(entrada: dict, historico: list[dict]) -> bool:
+    """Carga calculada muito diferente da última registrada: mais de 1,5x, ou 40-60% dela."""
+    if not entrada["sets"]:
+        return False
+
+    primeira_serie = entrada["sets"][0]
+    if primeira_serie.get("por_lado"):
+        return False
+
+    carga = primeira_serie.get("weight_kg")
+    ultima = _ultima_carga_historico(historico)
+    if carga is None or not ultima:
+        return False
+
+    razao = carga / ultima
+    piso, topo = FAIXA_AMBIGUIDADE_LADO
+    return razao > 1.5 or (piso <= razao <= topo)
+
+
 class Agent:
     def __init__(self, primary: LLMClient | None = None, fallback: LLMClient | None = None):
         self.primary = primary or criar_client("gemini")
@@ -159,7 +178,7 @@ class Agent:
         historico = []
         if primeiro:
             historico = get_history(db, primeiro["exercise_slug"])
-            if ambiguidade_de_lado(primeiro, historico):
+            if ambiguidade_de_lado(primeiro, historico) or carga_implausivel(primeiro, historico):
                 return _pergunta_lado(primeiro)
 
         resumo_log = log_sets(db, data, text, com_personal, normalizado)

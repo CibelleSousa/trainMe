@@ -4,7 +4,7 @@ from sqlmodel import SQLModel, create_engine, select
 from sqlmodel import Session as DbSession
 
 import app.agent as agent_mod
-from app.agent import Agent, ambiguidade_de_lado, get_history, log_sets
+from app.agent import Agent, ambiguidade_de_lado, carga_implausivel, get_history, log_sets
 from app.models import ExerciseLog, SetLog
 
 
@@ -193,4 +193,55 @@ def test_agent_pergunta_por_lado_quando_carga_e_cerca_da_metade_do_historico():
 
     assert "por lado" in resposta.lower()
     assert len(primary.chamadas) == 1  # não chamou a LLM de novo pra compor mensagem
+    assert len(db.exec(select(ExerciseLog)).all()) == 1  # só a sessão anterior, não gravou a nova
+
+
+def test_carga_implausivel_marca_quando_mais_de_1_5x_a_ultima():
+    assert carga_implausivel(entrada("supino_reto_barra", 180.0), historico_com_carga(35.0)) is True
+
+
+def test_carga_implausivel_marca_quando_cerca_da_metade():
+    assert carga_implausivel(entrada("supino_reto_barra", 17.5), historico_com_carga(35.0)) is True
+
+
+def test_carga_implausivel_nao_marca_quando_proxima_da_ultima():
+    assert carga_implausivel(entrada("supino_reto_barra", 37.5), historico_com_carga(35.0)) is False
+
+
+def test_carga_implausivel_nao_marca_quando_por_lado_explicito():
+    assert carga_implausivel(entrada("supino_reto_barra", 180.0, por_lado=True), historico_com_carga(35.0)) is False
+
+
+def test_carga_implausivel_nao_marca_sem_historico():
+    assert carga_implausivel(entrada("supino_reto_barra", 180.0), []) is False
+
+
+def test_agent_pergunta_quando_carga_calculada_e_muito_maior_que_a_ultima():
+    db = db_memoria()
+    log_sets(
+        db,
+        date(2026, 11, 9),
+        "supino reto com 7,5",
+        False,
+        {
+            "entries": [
+                {"exercise_raw": "supino reto", "exercise_slug": "supino_reto_barra", "sets": [{"weight_kg": 35.0, "reps": 10, "flag": None}]}
+            ],
+            "needs_confirmation": False,
+        },
+    )
+
+    # "supino reto com 80" -> anilhas_por_lado dobra: 20 + 2*80 = 180, bem mais que 1,5x os 35 do histórico
+    extracao = {
+        "entries": [{"exercise_raw": "supino reto", "sets": [{"weight_kg": 80.0, "reps": 10, "flag": None}]}],
+        "needs_confirmation": False,
+    }
+    primary = ClientFalso(respostas=[extracao])
+    fallback = ClientFalso()
+    agente = Agent(primary=primary, fallback=fallback)
+
+    resposta = agente.handle_message(db, "supino reto com 80", date(2026, 11, 11))
+
+    assert "por lado" in resposta.lower() or "total" in resposta.lower()
+    assert len(primary.chamadas) == 1
     assert len(db.exec(select(ExerciseLog)).all()) == 1  # só a sessão anterior, não gravou a nova
