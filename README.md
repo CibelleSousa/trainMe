@@ -9,6 +9,8 @@ avaliação que compara configurações de extração.
 A sugestão de progressão é uma heurística (dupla progressão simples), **não
 é recomendação profissional**.
 
+[Dataset no Hugging Face](https://huggingface.co/datasets/CibelleRodrigues/trainme-treino-ptbr) | [Artigo no dev.to](https://dev.to/cibellesousa/medindo-um-agente-de-treino-o-que-o-few-shot-fez-e-nao-fez-com-um-modelo-local-e-com-o-gemini-54a0)
+
 ## Demonstração
 
 | Histórico com sugestão da próxima sessão | Gravando por voz | Voz virando texto no campo |
@@ -94,6 +96,13 @@ só uma camada de entrada de texto; a avaliação é feita sempre em texto.
 
 Dataset completo: 52 exemplos (6 `real`, 46 `sintetico`). Rodada final em
 `results/*.jsonl`, relatório completo em `results/report.md`.
+
+Quem quiser reproduzir a avaliação, o dataset anotado está publicado no
+[Hugging Face](https://huggingface.co/datasets/CibelleRodrigues/trainme-treino-ptbr)
+(dataset card com a estrutura dos campos e as convenções de anotação). Pra
+análise completa dos erros — o que o few-shot mudou e não mudou, com o
+modelo local e com o Gemini — tem o
+[artigo no dev.to](https://dev.to/cibellesousa/medindo-um-agente-de-treino-o-que-o-few-shot-fez-e-nao-fez-com-um-modelo-local-e-com-o-gemini-54a0).
 
 | Config | Exercício | Série | Exato | Latência med. |
 |---|---|---|---|---|
